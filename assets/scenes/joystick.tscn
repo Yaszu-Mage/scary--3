@@ -1,0 +1,79 @@
+[gd_scene load_steps=5 format=3 uid="uid://bnxbd5fhqesa6"]
+
+[ext_resource type="Texture2D" uid="uid://cnh3nfs5ttoi5" path="res://assets/images/knob.png" id="1_fntjs"]
+[ext_resource type="Texture2D" uid="uid://djwpx3jyo58qv" path="res://assets/images/ring.png" id="2_03o0d"]
+
+[sub_resource type="GDScript" id="GDScript_oy4c3"]
+script/source = "extends Node2D
+var posVector : Vector2
+
+# Called when the node enters the scene tree for the first time.
+func _ready() -> void:
+	pass # Replace with function body.
+
+
+# Called every frame. 'delta' is the elapsed time since the previous frame.
+func _process(delta: float) -> void:
+	pass
+"
+
+[sub_resource type="GDScript" id="GDScript_rc4om"]
+script/source = "extends Sprite2D
+var pressed = false
+@onready var parent = $\"..\"
+@export var maxLength = 150
+@export var deadzone = 5
+# Called when the node enters the scene tree for the first time.
+func _ready() -> void:
+	maxLength *= parent.scale.x
+
+
+# Called every frame. 'delta' is the elapsed time since the previous frame.
+func _process(delta: float) -> void:
+	if pressed:
+		if get_global_mouse_position().distance_to(parent.global_position) < maxLength:
+			global_position = get_global_mouse_position()
+		else:
+			var angle = parent.global_position.angle_to_point((get_global_mouse_position()))
+			global_position.x = parent.global_position.x + cos(angle)*maxLength
+			global_position.y = parent.global_position.y + sin(angle)*maxLength
+		calculateVector()
+	else:
+		global_position = lerp(global_position, parent.global_position, delta*50)
+		parent.posVector = Vector2.ZERO
+
+
+func _on_button_button_down() -> void:
+	pressed = true
+
+
+func _on_button_button_up() -> void:
+	pressed = false
+
+func calculateVector():
+	if abs((global_position.x - parent.global_position.x)) >= deadzone:
+		parent.posVector.x = (global_position.x - parent.global_position.x)/maxLength
+	if abs((global_position.y - parent.global_position.y)) >= deadzone:
+		parent.posVector.y = (global_position.y - parent.global_position.y)/maxLength
+	print(parent.posVector)
+"
+
+[node name="joystick" type="Node2D"]
+script = SubResource("GDScript_oy4c3")
+
+[node name="knob" type="Sprite2D" parent="."]
+texture = ExtResource("1_fntjs")
+script = SubResource("GDScript_rc4om")
+
+[node name="ring" type="Sprite2D" parent="."]
+texture = ExtResource("2_03o0d")
+
+[node name="Button" type="Button" parent="."]
+self_modulate = Color(1, 1, 1, 0)
+offset_left = -252.0
+offset_top = -247.0
+offset_right = 248.0
+offset_bottom = 252.0
+
+[connection signal="button_down" from="Button" to="knob" method="_on_button_button_down"]
+[connection signal="button_up" from="Button" to="knob" method="_on_button_button_up"]
